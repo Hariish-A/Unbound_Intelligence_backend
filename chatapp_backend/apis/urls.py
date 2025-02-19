@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     ProviderListCreateView, ProviderDetailView,
-    ModelListCreateView, ModelDetailView, SupportedModelsView, ChatCompletionView
+    ModelListCreateView, ModelDetailView, SupportedModelsView, ChatCompletionView, FileUploadView
 )
 
 urlpatterns = [
@@ -13,5 +13,6 @@ urlpatterns = [
 
     path("models/", SupportedModelsView.as_view(), name="supported-models"),
     path('chat/completions/', ChatCompletionView.as_view(), name='chat-completions'),
-]
+    path('file/upload', FileUploadView.as_view(), name='file-upload'),
 
+]

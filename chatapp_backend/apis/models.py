@@ -33,3 +33,17 @@ class RegexRule(models.Model):
 
     def __str__(self):
         return f"Rule: {self.original_model} -> {self.redirect_model} (Regex: {self.regex_pattern})"
+
+
+class FileUploadRule(models.Model):
+    file_type = models.CharField(max_length=50, unique=True)
+    provider = models.ForeignKey(Provider, on_delete=models.CASCADE)
+    model = models.ForeignKey(ChatModel, on_delete=models.CASCADE)
+
+    def save(self, *args, **kwargs):
+        if self.file_type:
+            self.file_type = self.file_type.upper()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.file_type} -> {self.provider.name}/{self.model.model}"

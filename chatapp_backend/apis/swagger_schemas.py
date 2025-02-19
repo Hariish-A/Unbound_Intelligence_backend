@@ -1,6 +1,6 @@
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from .serializers import ProviderSerializer, ModelSerializer, ChatCompletionResponseSerializer
+from .serializers import ProviderSerializer, ModelSerializer, ChatCompletionResponseSerializer, FileUploadSerializer
 
 # --- Providers ---
 provider_list_schema = swagger_auto_schema(
@@ -103,4 +103,19 @@ chat_completions_schema = swagger_auto_schema(
         }
     ),
     responses={200: openapi.Response('Success', ChatCompletionResponseSerializer)}
+)
+
+
+file_upload_schema = swagger_auto_schema(
+        operation_description="Upload a file and get processed response",
+        request_body=FileUploadSerializer,
+        responses={200: openapi.Response("File successfully processed")},
+        manual_parameters=[
+            openapi.Parameter(
+                name="file",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                description="File to upload"
+            )
+        ],
 )

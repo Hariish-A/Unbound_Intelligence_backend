@@ -1,22 +1,24 @@
 from rest_framework import generics
 from rest_framework.response import Response
 
-from .adapter import OpenAIAdapter, AnthropicAdapter, GeminiAdapter
-from .models import Provider, ChatModel, ChatCompletionResponse
-from .serializers import ProviderSerializer, ModelSerializer, ChatCompletionResponseSerializer
+from .adapter import OpenAIAdapter, AnthropicAdapter, GeminiAdapter, OpenAIFileAdapter, AnthropicFileAdapter, GeminiFileAdapter
+from .models import Provider, ChatModel, ChatCompletionResponse, FileUploadRule
+from .serializers import ProviderSerializer, ModelSerializer, ChatCompletionResponseSerializer, FileUploadSerializer
 from .permissions import AdminOnlyEditPermission
 from .swagger_schemas import (
     provider_list_schema, provider_create_schema, provider_detail_schema, provider_update_schema,
     provider_delete_schema,
     chat_model_list_schema, chat_model_create_schema, chat_model_detail_schema, chat_model_update_schema,
     chat_model_delete_schema,
-    supported_models_schema, chat_completions_schema
+    supported_models_schema, chat_completions_schema, file_upload_schema
 )
 from rest_framework.permissions import AllowAny
 
 from .utils import check_and_redirect
 from django.shortcuts import get_object_or_404
-
+import magic
+from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser
 
 
 class ProviderListCreateView(generics.ListCreateAPIView):
@@ -154,4 +156,50 @@ class ChatCompletionView(generics.CreateAPIView):
         }
 
         # Return the response data using the serializer (without saving to the DB)
+        return Response(response_data)
+
+
+class FileUploadView(APIView):
+    """
+    Handles file uploads and routes to the appropriate model for processing.
+    """
+    parser_classes = [MultiPartParser]
+    permission_classes = [AllowAny]
+
+    @file_upload_schema
+    def post(self, request, *args, **kwargs):
+        uploaded_file = request.FILES.get('file')
+        if not uploaded_file:
+            return Response({"error": "No file uploaded"}, status=400)
+
+        # Detect file type using magic (MIME type)
+        mime = magic.Magic(mime=True)
+        file_type = mime.from_buffer(uploaded_file.read(2048)).split('/')[1].upper()
+
+        # Find the corresponding rule
+        file_rule = get_object_or_404(FileUploadRule, file_type=file_type)
+
+        # Get the corresponding provider and model
+        provider = file_rule.provider
+        model = file_rule.model
+
+        # Select the correct adapter
+        if provider.name == "openai":
+            adapter = OpenAIFileAdapter()
+        elif provider.name == "anthropic":
+            adapter = AnthropicFileAdapter()
+        elif provider.name == "gemini":
+            adapter = GeminiFileAdapter()
+        else:
+            return Response({"error": "Invalid provider"}, status=400)
+
+        # Process the file
+        response_text = adapter.process_file(uploaded_file, model)
+
+        # Return the response
+        response_data = {
+            "provider": provider.name,
+            "model": model.model,
+            "response": response_text
+        }
         return Response(response_data)

@@ -21,3 +21,7 @@ class ChatCompletionResponseSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChatCompletionResponse
         fields = ['provider', 'model', 'response']
+
+
+class FileUploadSerializer(serializers.Serializer):
+    file = serializers.FileField()
