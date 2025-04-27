@@ -1,5 +1,3 @@
-# Unbound Hackathon
-
 ## 🚀 Project Overview
 This project provides an AI proxy service that allows users to interact with various AI models via a chat interface. The backend is built with **Django**, the frontend with **React (npm)**, and the database uses **SQLite3**.
 
